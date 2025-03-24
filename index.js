@@ -4,8 +4,9 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 
-const uri = process.env.MONGO_URI;
+const Article = require('./models/Article');
 
+const uri = process.env.MONGO_URI;
 mongoose.connect(uri, {useNewUrlParser: true, useUnifiedTopology: true})
 .then(() => console.log('Connected to MongoDB'))
 .catch(err => console.error('Could not connect to MongoDB', err))
@@ -64,6 +65,65 @@ app.patch('/updateSpecificField', (req, res) =>{
 
 app.delete('/deleteProduct', (req, res) =>{
     res.send('deleting a product')
+})
+
+
+// ================== Articles endpoint ==================
+app.post('/articles', async (req, res) => {
+    const newArticle = new Article();
+    newArticle.title = req.body.articleTitle;
+    newArticle.body = req.body.articleBody;
+    newArticle.numberOfLikes = 0;
+
+
+    await newArticle.save()
+
+    // checking status of the request
+    if(res.statusCode === 200){
+        res.json({
+            message: 'Article created successfully',
+            data: newArticle
+        })
+    }else{
+        res.json({
+            message: 'Article not created'
+        })
+    }
+})
+
+app.get('/articles', async (req, res) => {
+    const articles = await Article.find();
+    res.json({
+        data: articles
+    })
+})
+
+app.get('/article/:id', async (req, res) => {
+    const article = await Article.findById(req.params.id);
+    res.json({
+        data: article
+    })
+})
+
+app.put('/article/:id', async (req, res) => {
+    const article = await Article.findById(req.params.id);
+    article.title = req.body.articleTitle;
+    article.body = req.body.articleBody;
+
+    await article.save();
+
+    res.json({
+        message: 'Article updated successfully',
+        data: article
+    })
+})
+
+app.delete("/article/:id", async (req, res) =>{
+    const article = await Article.findByIdAndDelete(req.params.id);
+    res.json({
+        message: 'Article deleted successfully',
+        data: article
+    })
 })
 
 const port = process.env.PORT || 3000;
